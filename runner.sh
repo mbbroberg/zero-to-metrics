@@ -1,0 +1,120 @@
+#!/bin/bash
+
+PATH_TO_P2O="/Users/mjbrende/Documents/Develop/GrimoireELK/utils"
+
+declare -a arr=("inteleon/snap-plugin-collector-newrelic"
+"opsvision/snap-plugin-publisher-awssqs"
+"opsvision/snap-plugin-publisher-signalfx"
+"opsvision/snap-plugin-collector-syslog"
+"circonus-labs/snap-plugin-publisher-circonus"
+"IrekRomaniuk/snap-plugin-collector-sessioninfo"
+"raintank/snap-plugin-collector-kubestate"
+"raintank/snap-plugin-collector-ping"
+"raintank/snap-plugin-collector-procnum"
+"raintank/snap-plugin-collector-memcache"
+"raintank/snap-plugin-collector-snapstats"
+"raintank/snap-plugin-collector-tcpconns"
+"Staples-Inc/snap-plugin-collector-couchbase"
+"Staples-Inc/snap-plugin-collector-netstat"
+"Staples-Inc/snap-plugin-collector-nginx"
+"Staples-Inc/snap-plugin-collector-procstat"
+"Staples-Inc/snap-plugin-publisher-blueflood"
+"Ticketmaster/snap-plugin-publisher-cloudwatch"
+"intelsdi-x/snap-plugin-collector-apache"
+"intelsdi-x/snap-plugin-collector-cassandra"
+"intelsdi-x/snap-plugin-collector-ceph"
+"intelsdi-x/snap-plugin-collector-cinder"
+"intelsdi-x/snap-plugin-collector-cpu"
+"intelsdi-x/snap-plugin-collector-dbi"
+"intelsdi-x/snap-plugin-collector-df"
+"intelsdi-x/snap-plugin-collector-disk"
+"intelsdi-x/snap-plugin-collector-docker"
+"intelsdi-x/snap-plugin-collector-elasticsearch"
+"intelsdi-x/snap-plugin-collector-etcd"
+"intelsdi-x/snap-plugin-collector-ethtool"
+"intelsdi-x/snap-plugin-collector-facter"
+"intelsdi-x/snap-plugin-collector-glance"
+"intelsdi-x/snap-plugin-collector-haproxy"
+"intelsdi-x/snap-plugin-collector-influxdb"
+"intelsdi-x/snap-plugin-collector-interface"
+"intelsdi-x/snap-plugin-collector-iostat"
+"intelsdi-x/snap-plugin-collector-keystone"
+"intelsdi-x/snap-plugin-collector-libvirt"
+"intelsdi-x/snap-plugin-collector-load"
+"intelsdi-x/snap-plugin-collector-logs"
+"intelsdi-x/snap-plugin-collector-meminfo"
+"intelsdi-x/snap-plugin-collector-mesos"
+"intelsdi-x/snap-plugin-collector-mongodb"
+"intelsdi-x/snap-plugin-collector-mysql"
+"intelsdi-x/snap-plugin-collector-neutron"
+"intelsdi-x/snap-plugin-collector-nfsclient"
+"intelsdi-x/snap-plugin-collector-node-manager"
+"intelsdi-x/snap-plugin-collector-nova"
+"intelsdi-x/snap-plugin-collector-openfoam"
+"intelsdi-x/snap-plugin-collector-osv"
+"intelsdi-x/snap-plugin-collector-pcm"
+"intelsdi-x/snap-plugin-collector-perfevents"
+"intelsdi-x/snap-plugin-collector-processes"
+"intelsdi-x/snap-plugin-collector-psutil"
+"intelsdi-x/snap-plugin-collector-rabbitmq"
+"intelsdi-x/snap-plugin-collector-scaleio"
+"intelsdi-x/snap-plugin-collector-scsi"
+"intelsdi-x/snap-plugin-collector-schedstat"
+"intelsdi-x/snap-plugin-collector-snmp"
+"intelsdi-x/snap-plugin-collector-smart"
+"intelsdi-x/snap-plugin-collector-swap"
+"intelsdi-x/snap-plugin-collector-use"
+"intelsdi-x/snap-plugin-collector-users"
+"intelsdi-x/snap-plugin-collector-yarn"
+"intelsdi-x/snap-plugin-processor-anomalydetection"
+"intelsdi-x/snap-plugin-processor-logs-openstack"
+"intelsdi-x/snap-plugin-processor-logs-regexp"
+"intelsdi-x/snap-plugin-processor-movingaverage"
+"intelsdi-x/snap-plugin-processor-statistics"
+"intelsdi-x/snap-plugin-processor-tag"
+"intelsdi-x/snap-plugin-publisher-cassandra"
+"intelsdi-x/snap-plugin-publisher-elasticsearch"
+"intelsdi-x/snap-plugin-publisher-etcd"
+"intelsdi-x/snap-plugin-publisher-file"
+"intelsdi-x/snap-plugin-publisher-graphite"
+"intelsdi-x/snap-plugin-publisher-hana"
+"intelsdi-x/snap-plugin-publisher-heapster"
+"intelsdi-x/snap-plugin-publisher-heka"
+"intelsdi-x/snap-plugin-publisher-influxdb"
+"intelsdi-x/snap-plugin-publisher-kafka"
+"intelsdi-x/snap-plugin-publisher-kairosdb"
+"intelsdi-x/snap-plugin-publisher-mysql"
+"intelsdi-x/snap-plugin-publisher-opentsdb"
+"intelsdi-x/snap-plugin-publisher-postgresql"
+"intelsdi-x/snap-plugin-publisher-rabbitmq"
+"intelsdi-x/snap-plugin-publisher-riemann"
+"runabove/snap-plugin-publisher-warp10"
+"janczer/snap-plugin-collector-entropy"
+"marcin-krolik/snap-plugin-publisher-slack"
+"intelsdi-x/snap-plugin-processor-change-detector"
+"intelsdi-x/snap-plugin-processor-tags-filter"
+"intelsdi-x/snap-plugin-processor-threshold"
+"intelsdi-x/snap-plugin-collector-influxdb-data"
+"hstack/snap-plugin-publisher-prometheus"
+"intelsdi-x/snap"
+)
+
+for i in ${arr[@]}
+do
+  # Note: Lesser known fact you can use any delimiter for sed, not just /
+  FOO="$(echo $i | awk -F / '{print $1, $2}')"
+  
+  # Get all commit history from the Repositories. This takes a while to gather
+  # (clones down EVERY repo listed in order to do so)
+  python3 $PATH_TO_P2O/p2o.py --enrich --index git_raw --index-enrich git \
+  -e http://localhost:9200 --no_inc --debug \
+  git https://github.com/$i.git
+  
+  # Get all GitHub Issues including Pull Requests
+  python3 $PATH_TO_P2O/p2o.py --enrich --index github_raw --index-enrich github \
+    -e http://localhost:9200 --no_inc --debug \
+    github $FOO \
+    -t d10d00c2e1404ccc30bfd47caf65307888a6650d --sleep-for-rate
+done
+
+
